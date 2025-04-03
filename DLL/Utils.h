@@ -63,11 +63,11 @@ uintptr_t getBaseAddress(const char* module) {
     return baseAddress;
 }
 
-uintptr_t getWithOffsets(uintptr_t baseAddress, const uintptr_t *offsets, size_t offsetCount) {
+uintptr_t getWithOffsets(uintptr_t baseAddress, std::vector<uintptr_t> offsets) {
     uintptr_t address = baseAddress;
     uintptr_t pointer = *(uintptr_t *) address;
-    for (size_t i = 0; i < offsetCount; i++) {
-        address = pointer + offsets[i];
+    for ( uintptr_t offset : offsets) {
+        address = pointer + offset;
         if (!isValidPointer((void *) address)) {  // Используем void* для проверки.
             log("Invalid address!");
             return 0;

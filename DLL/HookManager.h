@@ -73,10 +73,8 @@ static HookManager hookManager;
 
 #define METHOD(offset, method, ret, conv, ...) \
     typedef ret(conv* t##method)(__VA_ARGS__); \
-    static ret conv hk##method(__VA_ARGS__); \
     static inline uintptr_t a##method = baseAssembly + offset; \
-    static inline t##method o##method = (t##method)a##method; \
-    static ret conv hk##method(__VA_ARGS__)
+    static inline t##method o##method = (t##method)a##method;
 
 
 #define HOOK_METHOD(offset, method, ret, conv, ...) \
