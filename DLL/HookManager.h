@@ -25,14 +25,14 @@ public:
             const char* methodName,
             FuncType hook,
             FuncType* original,
-            void** target
+            uintptr_t *target
     ) {
         HookWrapper<void*> wrapper{};
         wrapper.offset = offset;
         wrapper.methodName = methodName;
         wrapper.hook = reinterpret_cast<void*>(hook);
         wrapper.original = reinterpret_cast<void*>(original);
-        wrapper.target = target;
+        wrapper.target = reinterpret_cast<void**>(target);
         hooks.push_back(wrapper);
         printf("Hook added: %s at offset 0x%X\n", methodName, offset);
     }
@@ -48,6 +48,7 @@ public:
                     hook.hook,
                     reinterpret_cast<LPVOID*>(hook.original)
             );
+            printf("Method name %s at address 0x%X\n", hook.methodName, *hook.target);
         }
         MH_EnableHook(MH_ALL_HOOKS);
     }
@@ -67,13 +68,22 @@ public:
     }
 };
 
-//static HookManager hookManager;
+static HookManager hookManager;
+
 
 #define METHOD(offset, method, ret, conv, ...) \
     typedef ret(conv* t##method)(__VA_ARGS__); \
+    static ret conv hk##method(__VA_ARGS__); \
+    static inline uintptr_t a##method = baseAssembly + offset; \
+    static inline t##method o##method = (t##method)a##method; \
+    static ret conv hk##method(__VA_ARGS__)
+
+
+#define HOOK_METHOD(offset, method, ret, conv, ...) \
+    typedef ret(conv* t##method)(__VA_ARGS__); \
     static inline t##method o##method = nullptr; \
     static ret conv hk##method(__VA_ARGS__); \
-    static inline void* a##method = baseAssembly + offset; \
+    static inline uintptr_t a##method = baseAssembly + offset; \
     struct HookRegister_##method { \
         HookRegister_##method() { \
             hookManager.Add(offset, #method, &hk##method, &o##method, &a##method); \

@@ -1,1 +1,1 @@
-set(CHEAT_DLL_NAME "CheatDLL")
+set(CHEAT_DLL_NAME "CheatDLL2")

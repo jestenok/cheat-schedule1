@@ -8,13 +8,8 @@
 class InternalCheat {
 public:
     char processName[64] = "Schedule I.exe";
-    char moduleName[26];
+    char moduleName[255];
     DWORD pid = 0;
-
-    // Конструктор по умолчанию
-    InternalCheat() {
-        strcpy(moduleName, "CheatDLL.dll");
-    }
 
     // Конструктор с параметром
     InternalCheat(const std::string& name) {
@@ -37,7 +32,7 @@ public:
         pid = worker.findProcessId(processName);
         printf("Process ID: %d\n", pid);
 
-        char DLLPath[MAX_PATH] = R"(D:\my_projects\cheat\)";
+        char DLLPath[MAX_PATH] = R"(D:\my_projects\cheat-schedule1\)";
         strcat(DLLPath, moduleName);
         Injector injector;
         return injector.injectByName(DLLPath, processName);

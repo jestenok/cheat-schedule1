@@ -1,5 +1,7 @@
 #include <windows.h>
 #include <iostream>
 
+uintptr_t base = (uintptr_t)GetModuleHandle(nullptr);
+
 auto baseAssemblyName = "GameAssembly.dll";
-auto baseAssembly = GetModuleHandleA(baseAssemblyName);
+uintptr_t baseAssembly = (uintptr_t)GetModuleHandle(baseAssemblyName);

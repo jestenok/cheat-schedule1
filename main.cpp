@@ -1,6 +1,5 @@
 #include <windows.h>
 #include <iostream>
-#include <csignal>
 #include <string>
 #include "InternalCheat.hpp"
 
@@ -10,7 +9,7 @@ InternalCheat* pCheat = nullptr;
 
 int main() {
     SetConsoleOutputCP(65001);
-    std::string dllName = "CheatDLL.dll";
+    std::string dllName = R"(CheatDLL2.dll)";
     InternalCheat cheat(dllName);
     cheat.injectDLL();
     std::atexit([]() {

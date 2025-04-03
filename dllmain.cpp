@@ -1,14 +1,14 @@
-//#include "DLL/CheatLogic.h"
-#include "DLL/Utils.h"
+#include "DLL/CheatLogic.h"
+
 
 
 int Attach() {
-//    createConsole();
-    printf("Console created!");
+    createConsole();
+    log("Console created!");
 
-//    hookManager.SetupHook();
-//    CheatLogic();
-    printf("Done!");
+    hookManager.SetupHook();
+    CheatLogic();
+    log("Done!");
     Sleep(1000 * 60 * 60);
     return 0;
 }
