@@ -1,0 +1,1 @@
+set(CHEAT_DLL_NAME "CheatDLL")
