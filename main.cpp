@@ -9,7 +9,7 @@ InternalCheat* pCheat = nullptr;
 
 int main() {
     SetConsoleOutputCP(65001);
-    std::string dllName = R"(CheatDLL2.dll)";
+    std::string dllName = R"(CheatDLL.dll)";
     InternalCheat cheat(dllName);
     cheat.injectDLL();
     std::atexit([]() {

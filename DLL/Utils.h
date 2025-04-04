@@ -68,6 +68,7 @@ uintptr_t getWithOffsets(uintptr_t baseAddress, std::vector<uintptr_t> offsets) 
     uintptr_t pointer = *(uintptr_t *) address;
     for ( uintptr_t offset : offsets) {
         address = pointer + offset;
+//        printf("address: %p\n", address);
         if (!isValidPointer((void *) address)) {  // Используем void* для проверки.
             log("Invalid address!");
             return 0;

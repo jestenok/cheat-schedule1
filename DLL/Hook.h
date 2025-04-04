@@ -26,12 +26,19 @@ HOOK_METHOD(0x833420, ChangeBalance, void, __fastcall, void* thisPtr, float amou
 //    return null;
 //}
 
-int i = 0;
-HOOK_METHOD(0x67F6C0, GetPlayer, void*, __fastcall, const char* playerCode)
+//int i = 0;
+//HOOK_METHOD(0x67F6C0, GetPlayer, void*, __fastcall, const char* playerCode)
+//{
+//    if (i <= 10) {
+//        printf("GetPlayer %s\n", playerCode);
+//        i++;
+//    }
+//    return oGetPlayer(playerCode);
+//}
+
+
+HOOK_METHOD(0x6BE7F0, Jump, void*, __fastcall, void* thisPtr)
 {
-    if (i <= 10) {
-        printf("GetPlayer %s\n", playerCode);
-        i++;
-    }
-    return oGetPlayer(playerCode);
+    printf("Jump %p\n", thisPtr);
+    return oJump(thisPtr);
 }
