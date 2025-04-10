@@ -4,58 +4,122 @@
 #include <cstdint>
 #include "Hook.h"
 
-#pragma pack(push, 1)
-
-#define BEGIN_STRUCT(name) struct name { \
-    constexpr static size_t __BASE_OFFSET = 0x0; \
-    constexpr static size_t __CURRENT_OFFSET = __BASE_OFFSET;
-
-#define FIELD(type, name, offset, prev_offset) \
-    static_assert(offset >= prev_offset, "Offsets must be in ascending order"); \
-    char filler_##__LINE__[(offset) - prev_offset]; \
-    type name;
-
-#define END_STRUCT };
-
-BEGIN_STRUCT(Health)
-    FIELD(float, CurrentHealth, 0x11C, __CURRENT_OFFSET)
-END_STRUCT
-
-BEGIN_STRUCT(Player)
-    FIELD(Health*, Health, 0x178, __CURRENT_OFFSET)
-END_STRUCT
-
-template<typename T>
-BEGIN_STRUCT(List)
-    FIELD(T, array[10], 0x20, __CURRENT_OFFSET)
-END_STRUCT
-
-BEGIN_STRUCT(PlayerList)
-    FIELD(List<Player*>*, _items, 0x10, __CURRENT_OFFSET)
-END_STRUCT
-
-
-//struct PlayerList {
-//    char filler_0[0x10];
-//    void* _items[10];
-//};
-
-
-#pragma pack(pop)
+void PrintObject(UnityResolve::UnityType::GameObject* obj) {}
 
 void CheatLogic() {
-//    void* addr = oGetPlayer("Local");
-//    printf("GetPlayer %p\n", addr);
+    vehicleManager = VehicleManager::GetInstance();
+    if (!vehicleManager) {
+        printf("VM not found\n");
+        return;
+    }
 
-    std::vector<uintptr_t> offsets = { 0xB8, 0x0, 0xD0, 0xE8, 0x58, 0x3C0 };
-    PlayerList* aPlayerList = reinterpret_cast<PlayerList *>(getWithOffsets(unityPlayer + 0x01CF0AC8, offsets));
-//    PlayerList oPlayerList = *aPlayerList;
-    printf("PlayerList %p\n", aPlayerList);
-    printf("PlayerList items %p\n", aPlayerList->_items);
-    printf("PlayerList items %p\n", aPlayerList->_items->array[0]);
-    Player* player = aPlayerList->_items->array[0];
-    printf("Player %p\n", player);
-    printf("Player Health %p\n", player->Health);
-    printf("Player Health CurrentHealth %f\n", player->Health->CurrentHealth);
-//    player->Health->CurrentHealth = -1.0f;
+    playerMovement = PlayerMovement::GetInstance();
+    printf("Player movement address %p\n", playerMovement);
+    if (!playerMovement) {
+        return;
+    }
+    playerList = PlayerList::GetInstance();
+    printf("player list address %p\n", playerList);
+    if (!playerList) {
+        return;
+    }
+    player = playerList->GetHost();
+    printf("player address %p\n", player);
+
+    officers = Officers::GetInstance();
+    if (!officers) {
+        printf("Officers not found\n");
+        return;
+    }
+    PoliceOfficer* officer = officers->_items->array[0];
+
+    auto* mainCamera = UnityResolve::UnityType::Camera::GetMain();
+    if (!mainCamera) {
+        std::cout << "Камера не найдена!" << std::endl;
+        return;
+    }
+    printf("mainCamera address %p\n", mainCamera);
+
+    auto screenX = UnityResolve::UnityType::Screen::get_width() / 2.0f;
+    auto screenY = UnityResolve::UnityType::Screen::get_height() / 2.0f;
+
+    UnityResolve::UnityType::Vector2 screenCenter(screenX, screenY);
+
+    auto vtable = officer->klass->vtable;
+    printf("Officers vtable %p\n", vtable);
+    auto method = vtable->_88_BeginBodySearch_Networked;
+    printf("method address %p\n", method);
+    printf("method pointer address %p\n", method.methodPtr);
+
+    tBeginBodySearch_Networked oBeginBodySearch_Networked = (tBeginBodySearch_Networked)0x7FFCB642BE90;
+
+
+//    tBeginBodySearch_Networked oBeginBodySearch_Networked = (tBeginBodySearch_Networked)method.methodPtr;
+//        oBeginBodySearch_Networked(officer, player->_networkObjectCache);
+    UnityResolve::UnityType::GameObject* gameObject = nullptr;
+
+    while (!(GetAsyncKeyState(VK_END) & 0x8000)) {
+        if (GetAsyncKeyState(VK_F1) & 0x8000) {
+            playerMovement->SetJumpForce();
+            playerMovement->SetMoveSpeedMultiplier();
+            playerMovement->gravityMultiplier = 1.4;
+        }
+
+        if (GetAsyncKeyState(VK_F2) & 0x8000) {
+            playerMovement->SetJumpForce(20);
+            playerMovement->SetMoveSpeedMultiplier(5);
+            playerMovement->gravityMultiplier = 1.4;
+        }
+
+        if (GetAsyncKeyState('E') & 0x8000) {
+            playerMovement->gravityMultiplier = 0;
+        }
+        if (GetAsyncKeyState('Q') & 0x8000) {
+            playerMovement->gravityMultiplier = 1.4;
+        }
+        if (GetAsyncKeyState('O') & 0x8000) {
+            myCar->SwitchPoliceLight();
+        }
+        if (GetAsyncKeyState('R') & 0x8000) {
+            auto ray = mainCamera->ScreenPointToRay(screenCenter);
+            ray.m_vOrigin = ray.m_vOrigin + ray.m_vDirection * 1.0f;
+            UnityResolve::UnityType::RaycastHit hit;
+            bool isHit = UnityResolve::UnityType::Physics::Raycast(ray, &hit, 10.0f);
+            if (isHit) {
+                // Получаем Transform объекта, в который попал луч
+                auto hitCollider = hit.get_collider();
+                auto hitTransform = hitCollider->GetTransform();
+
+                gameObject = hitTransform->GetGameObject();
+                auto name = gameObject->GetName()->ToString();
+                printf("GameObject %p %s\n", gameObject, name.c_str());
+
+                for ( int i = 0; i < 10; i++) {
+                    auto parent = hitTransform->GetParent();
+                    if (!parent) {
+                        break;
+                    }
+                    if (parent == hitTransform) {
+                        printf("Parent is self\n");
+                        break;
+                    } else {
+                        hitTransform = parent;
+                    }
+                    gameObject = parent->GetGameObject();
+                    name = gameObject->GetName()->ToString();
+
+                    printf("level %d %p %s\n", i, gameObject, name.c_str());
+                }
+                printf("\n");
+            }
+        }
+        if (GetAsyncKeyState('T') & 0x8000) {
+//            gameObject->Destroy();
+        }
+        if (GetAsyncKeyState(VK_F5) & 0x8000) {
+            auto  itemInstance = player->GetItem()->GetItemInstance();
+            itemInstance->_quantity = 228;
+        }
+        Sleep(50);
+    }
 }

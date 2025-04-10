@@ -31,7 +31,10 @@ public:
         ProcessWorker worker;
         pid = worker.findProcessId(processName);
         printf("Process ID: %d\n", pid);
-
+        if (pid == 0) {
+            std::cerr << "Process not found" << std::endl;
+            return 1;
+        }
         char DLLPath[MAX_PATH] = R"(D:\my_projects\cheat-schedule1\)";
         strcat(DLLPath, moduleName);
         Injector injector;

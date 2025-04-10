@@ -2,12 +2,29 @@
 #include "Adresses.h"
 
 
+void* GetMethodAddress(const char* className, const char* methodName) {
+    auto klass = assembly->Get(className);
+    if(!klass) {
+        printf("Class not found: %s\n", className);
+        return nullptr;
+    }
+
+    auto method = klass->Get<UnityResolve::Method>(methodName);
+    if(!method) {
+        printf("Method not found: %s\n", methodName);
+        return nullptr;
+    }
+
+    return method->GetInvokeAddress();
+}
+
 template<typename T>
 struct HookWrapper {
     intptr_t offset;
+    const char* className;
     const char* methodName;
-    T original;
     T hook;
+    void** original;
     void** target;
 };
 
@@ -25,19 +42,22 @@ public:
             const char* methodName,
             FuncType hook,
             FuncType* original,
-            uintptr_t *target
+            void** target
     ) {
         HookWrapper<void*> wrapper{};
         wrapper.offset = offset;
         wrapper.methodName = methodName;
         wrapper.hook = reinterpret_cast<void*>(hook);
-        wrapper.original = reinterpret_cast<void*>(original);
-        wrapper.target = reinterpret_cast<void**>(target);
+        wrapper.original = reinterpret_cast<void**>(original);
+        wrapper.target = target;
         hooks.push_back(wrapper);
-        printf("Hook added: %s at offset 0x%X\n", methodName, offset);
     }
 
-    void ResolveAll() {
+    virtual void ResolveAll() {
+        for(auto& hook : hooks) {
+            uintptr_t address = GAME_ASSEMBLY_ADDRESS + hook.offset;
+            *hook.target = reinterpret_cast<void*>(address);
+        }
     }
 
     void EnableAll() {
@@ -46,9 +66,8 @@ public:
             MH_CreateHook(
                     *hook.target,
                     hook.hook,
-                    reinterpret_cast<LPVOID*>(hook.original)
-            );
-            printf("Method name %s at address 0x%X\n", hook.methodName, *hook.target);
+                    hook.original);
+            printf("Method name %s at address %p\n", hook.methodName, *hook.target);
         }
         MH_EnableHook(MH_ALL_HOOKS);
     }
@@ -68,23 +87,69 @@ public:
     }
 };
 
+class ResolverHookManager : public HookManager {
+public:
+    template<typename FuncType>
+    void Add(
+            const char* className,
+            const char* methodName,
+            FuncType hook,
+            FuncType* original,
+            void** target
+    ) {
+        HookWrapper<void*> wrapper{};
+        wrapper.className = className;
+        wrapper.methodName = methodName;
+        wrapper.hook = reinterpret_cast<void*>(hook);
+        wrapper.original = reinterpret_cast<void**>(original);
+        wrapper.target = target;
+        hooks.push_back(wrapper);
+    }
+
+    void ResolveAll() override {
+        for(auto& hook : hooks) {
+            auto addr = GetMethodAddress(hook.className, hook.methodName);
+            if(!addr) {
+                printf("Failed to resolve method %s\n", hook.methodName);
+                continue;
+            }
+            *hook.target = addr;
+        }
+    }
+};
+
 static HookManager hookManager;
+static ResolverHookManager resolverHookManager;
 
 
-#define METHOD(offset, method, ret, conv, ...) \
+#define METHOD_BY_OFFSET(offset, method, ret, conv, ...) \
     typedef ret(conv* t##method)(__VA_ARGS__); \
-    static inline uintptr_t a##method = baseAssembly + offset; \
+    static inline uintptr_t a##method = GAME_ASSEMBLY + offset; \
     static inline t##method o##method = (t##method)a##method;
 
 
-#define HOOK_METHOD(offset, method, ret, conv, ...) \
+#define HOOK_METHOD_BY_OFFSET(offset, method, ret, conv, ...) \
     typedef ret(conv* t##method)(__VA_ARGS__); \
     static inline t##method o##method = nullptr; \
     static ret conv hk##method(__VA_ARGS__); \
-    static inline uintptr_t a##method = baseAssembly + offset; \
+    static inline void* a##method = nullptr; \
     struct HookRegister_##method { \
         HookRegister_##method() { \
             hookManager.Add(offset, #method, &hk##method, &o##method, &a##method); \
+        } \
+    }; \
+    static inline HookRegister_##method HookRegister_##method##_instance; \
+    static ret conv hk##method(__VA_ARGS__)
+
+
+#define HOOK_METHOD(klass, method, ret, conv, ...) \
+    typedef ret(conv* t##method)(__VA_ARGS__); \
+    static inline t##method o##method = nullptr; \
+    static ret conv hk##method(__VA_ARGS__); \
+    static inline void* a##method = nullptr; \
+    struct HookRegister_##method { \
+        HookRegister_##method() { \
+            resolverHookManager.Add(klass, #method, &hk##method, &o##method, &a##method); \
         } \
     }; \
     static inline HookRegister_##method HookRegister_##method##_instance; \

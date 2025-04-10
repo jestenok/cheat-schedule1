@@ -1,10 +1,17 @@
 #include <windows.h>
 #include <iostream>
+#include "UnityResolve.hpp"
 
-uintptr_t base = (uintptr_t)GetModuleHandle(nullptr);
+uintptr_t base = (uintptr_t)GetModuleHandleA(nullptr);
 
-auto baseAssemblyName = "GameAssembly.dll";
-uintptr_t baseAssembly = (uintptr_t)GetModuleHandle(baseAssemblyName);
+const char* ASSEMBLY_CSHARP_NAME = "Assembly-CSharp.dll";
+auto ASSEMBLY_CSHARP = GetModuleHandleA(ASSEMBLY_CSHARP_NAME);
+uintptr_t ASSEMBLY_CSHARP_ADDRESS = (uintptr_t)ASSEMBLY_CSHARP;
 
-auto unityPlayerName = "UnityPlayer.dll";
-uintptr_t unityPlayer = (uintptr_t)GetModuleHandle(unityPlayerName);
+auto GAME_ASSEMBLY_NAME = "GameAssembly.dll";
+auto GAME_ASSEMBLY = GetModuleHandleA(GAME_ASSEMBLY_NAME);
+uintptr_t GAME_ASSEMBLY_ADDRESS = (uintptr_t)GAME_ASSEMBLY;
+UnityResolve::Assembly *assembly;
+
+auto UNITY_PLAYER_NAME = "UnityPlayer.dll";
+uintptr_t UNITY_PLAYER = (uintptr_t)GetModuleHandleA(UNITY_PLAYER_NAME);

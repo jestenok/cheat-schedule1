@@ -12,12 +12,5 @@ int main() {
     std::string dllName = R"(CheatDLL.dll)";
     InternalCheat cheat(dllName);
     cheat.injectDLL();
-    std::atexit([]() {
-        if (pCheat) {
-            pCheat->detachDLL();
-        }
-    });
-    std::cin.get();
-    cheat.detachDLL();
     return 0;
 }
