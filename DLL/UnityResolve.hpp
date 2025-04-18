@@ -2164,6 +2164,12 @@ public:
                 return {};
             }
 
+            auto Destroy() -> void {
+                static Method* method;
+                if (!method) method = Get("UnityEngine.CoreModule.dll")->Get("Object")->Get<Method>("Destroy");
+                if (method) return method->Invoke<void>(this);
+            }
+
             static auto ToString(UnityObject* obj) -> String* {
                 if (!obj) return {};
                 static Method* method;

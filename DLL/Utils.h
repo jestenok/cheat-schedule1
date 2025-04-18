@@ -78,5 +78,10 @@ uintptr_t getWithOffsets(uintptr_t baseAddress, std::vector<uintptr_t> offsets) 
     return address;
 }
 
+std::wstring ExtractUnicodeString(const char* str, size_t length) {
+    const wchar_t* res = reinterpret_cast<const wchar_t *>((char*)str);
+    return std::wstring(res, length); // безопасный вариант
+}
+
 
 #pragma endregion

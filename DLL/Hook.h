@@ -1,16 +1,30 @@
 #include <windows.h>
-#include "Utils.h"
 #include "HookManager.h"
 
-typedef void(__attribute__((__fastcall__)) *tBeginBodySearch_Networked)(PoliceOfficer* thisPtr, void* target);
+typedef void(__attribute__((__fastcall__)) *AssignTarget)(ScheduleOne_NPCs_Behaviour_BodySearchBehaviour_o*, void*, FishNet_Object_NetworkObject_o*, const MethodInfo*);
+typedef void(__attribute__((__fastcall__)) *Enable)(ScheduleOne_NPCs_Behaviour_BodySearchBehaviour_o*, const MethodInfo*);
+typedef void(__attribute__((__fastcall__)) *tRpcLogic___BeginBodySearch_Networked_3323014238)(ScheduleOne_Police_PoliceOfficer_o* thisPtr, FishNet_Object_NetworkObject_o* target);
+typedef void(__attribute__((__fastcall__)) *RpcWriter___Server_BeginFootPursuit_Networked_419679943)(ScheduleOne_Police_PoliceOfficer_o* thisPtr, FishNet_Object_NetworkObject_o* target, bool includeColleagues);
 
+
+HOOK_METHOD("PoliceOfficer", StartBodySearchInvestigation, void, __fastcall, ScheduleOne_Police_PoliceOfficer_o* thisPtr, Player* p)
+{
+    printf("StartBodySearchInvestigation %p\n", thisPtr);
+    return oStartBodySearchInvestigation(thisPtr, p);
+}
+
+HOOK_METHOD("PlayerCrimeData", SetPursuitLevel, void, __fastcall, ScheduleOne_PlayerScripts_PlayerCrimeData_o* thisPtr, int32_t lvl, MethodInfo* method)
+{
+    printf("SetPursuitLevel %p %d\n", thisPtr, lvl);
+    return oSetPursuitLevel(thisPtr, 0, method);
+}
 
 HOOK_METHOD("PlayerMovement", SetCrouched, void, __fastcall, PlayerMovement* thisPtr, bool c)
 {
     oSetCrouched(thisPtr, c);
 }
 
-HOOK_METHOD("PoliceOfficer", ConductBodySearch, void, __fastcall, PoliceOfficer* thisPtr, Player* p)
+HOOK_METHOD("PoliceOfficer", ConductBodySearch, void, __fastcall, ScheduleOne_Police_PoliceOfficer_o* thisPtr, Player* p)
 {
     printf("ConductBodySearch %p\n", thisPtr);
 //    void* method = *(void**)((uintptr_t)thisPtr + 0x88 * 8);

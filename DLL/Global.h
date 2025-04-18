@@ -1,6 +1,9 @@
 #include <windows.h>
 #include <iostream>
 #include "UnityResolve.hpp"
+#include "il2cpp.h"
+#include "Utils.h"
+
 
 uintptr_t base = (uintptr_t)GetModuleHandleA(nullptr);
 
