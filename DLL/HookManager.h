@@ -106,6 +106,18 @@ public:
         hooks.push_back(wrapper);
     }
 
+    void RemoveHook(void* target)
+    {
+        for (auto& hook : hooks) {
+            if(*hook.target == target) {
+                MH_DisableHook(*hook.target);
+//                MH_RemoveHook(*hook.target);
+                printf("Hook  %s %p removed\n", hook.methodName, *hook.target);
+                return;
+            }
+        }
+    }
+
     void ResolveAll() override {
         for(auto& hook : hooks) {
             auto addr = GetMethodAddress(hook.className, hook.methodName);
@@ -143,15 +155,15 @@ static ResolverHookManager resolverHookManager;
 
 
 #define HOOK_METHOD(klass, method, ret, conv, ...) \
-    typedef ret(conv* t##method)(__VA_ARGS__); \
-    static inline t##method o##method = nullptr; \
-    static ret conv hk##method(__VA_ARGS__); \
-    static inline void* a##method = nullptr; \
-    struct HookRegister_##method { \
-        HookRegister_##method() { \
-            resolverHookManager.Add(klass, #method, &hk##method, &o##method, &a##method); \
+    typedef ret(conv* t##klass##_##method)(__VA_ARGS__); \
+    static inline t##klass##_##method o##klass##_##method = nullptr;\
+    static ret conv hk##klass##_##method(__VA_ARGS__); \
+    static inline void* a##klass##_##method = nullptr; \
+    struct HookRegister_##klass##_##method { \
+        HookRegister_##klass##_##method() { \
+            resolverHookManager.Add(#klass, #method, &hk##klass##_##method, &o##klass##_##method, &a##klass##_##method); \
         } \
     }; \
-    static inline HookRegister_##method HookRegister_##method##_instance; \
-    static ret conv hk##method(__VA_ARGS__)
+    static inline HookRegister_##klass##_##method HookRegister_##klass##_##method##_instance; \
+    static ret conv hk##klass##_##method(__VA_ARGS__)
 

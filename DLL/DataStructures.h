@@ -71,51 +71,25 @@ struct PlayerList : List<Player*, 10> {
                 UNITY_PLAYER + 0x01CF0AC8, {0xB8, 0x0, 0xD0, 0xE8, 0x58, 0x3C0 }));
     }
 
-    Player* GetHost() {
-        Player* player = this->_items->array[0];
+    Player* GetByIndex(int index = 0) {
+        Player* player = this->_items->array[index];
         if (!player) {
-            printf("Player is null\n");
             return nullptr;
         }
         return player;
     }
+
+    Player* GetHost() {
+        return GetByIndex();
+    }
 };
 
-struct PlayerMovement {
-    char filler[0x20];
-    Player* Player;
-    void* Controller;
-    float sensitivity;
-    float dead;
-    bool canMove;
-    bool canJump;
-    bool SprintingRequiresStamina;
-    bool _filler2;
-    float MoveSpeedMultiplier;
-    float SlipperyMovementMultiplier;
-    float jumpForce;
-    float gravityMultiplier; // 1.4
-    void* groundDetectionMask;
-    float slopeForce;
-    float slopeForceRayLength;
-    float crouchSpeedMultipler;
-    float Crouched_VigIntensity;
-    float Crouched_VigSmoothness;
-    void* visibilityPointsToScale;
-    void* originalVisibilityPointOffsets;
-    float playerHeight_k__BackingField;
-    UnityResolve::UnityType::Vector3 movement;
-
-    static PlayerMovement* GetInstance() {
-        return reinterpret_cast<PlayerMovement*>(getWithOffsets(
-                GAME_ASSEMBLY_ADDRESS + 0x0380B9E0, {0xB8, 0x0, 0x0 }));
-    }
-
+struct PlayerMovement : ScheduleOne_PlayerScripts_PlayerMovement_o {
     void SetJumpForce(float value = 5.25){
-        jumpForce = value;
+        fields.jumpForce = value;
     }
     void SetMoveSpeedMultiplier(float value = 1){
-        MoveSpeedMultiplier = value;
+        fields.MoveSpeedMultiplier = value;
     }
 };
 
@@ -200,16 +174,6 @@ struct AllVehicles : List<LandVehicle*, 10> {
             std::wstring vehicleName = name->GetName();
             wprintf(L"Vehicle name %ls\n", vehicleName.c_str());
         }
-    }
-};
-
-struct VehicleManager {
-    char filler[0x120];
-    AllVehicles* AllVehicles;
-
-    static VehicleManager* GetInstance() {
-        return reinterpret_cast<VehicleManager*>(getWithOffsets(
-                GAME_ASSEMBLY_ADDRESS + 0x038CFEA0, {0xB8, 0x0, 0x0 }));
     }
 };
 

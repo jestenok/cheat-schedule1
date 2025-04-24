@@ -18,3 +18,7 @@ UnityResolve::Assembly *assembly;
 
 auto UNITY_PLAYER_NAME = "UnityPlayer.dll";
 uintptr_t UNITY_PLAYER = (uintptr_t)GetModuleHandleA(UNITY_PLAYER_NAME);
+
+auto GAME_OVERLAY_RENDER_NAME = "GameOverlayRender64.dll";
+auto GAME_OVERLAY_RENDER = GetModuleHandleA(GAME_OVERLAY_RENDER_NAME);
+uintptr_t GAME_OVERLAY_RENDER_ADDRESS = (uintptr_t)GAME_ASSEMBLY;
