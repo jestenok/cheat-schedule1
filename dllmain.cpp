@@ -5,6 +5,7 @@ HMODULE ghModule;
 
 void Detach() {
     hookManager.RemoveHook();
+    CleanupD3D();
     log("Detached!\n\n");
 }
 
@@ -14,6 +15,18 @@ int Main() {
         printf("Assembly not found\n");
         return 1;
     }
+    MH_Initialize();
+    GAME_OVERLAY_RENDERER_ADDRESS = reinterpret_cast<void*>(FindPattern(GAME_OVERLAY_ADDRESS, GAME_OVERLAY_RENDER_PATTERN));
+    if (!GAME_OVERLAY_RENDERER_ADDRESS) {
+        printf("Game Overlay Render Address not found\n");
+        return 1;
+    }
+    printf("GAME_OVERLAY_ADDRESS %p\n", GAME_OVERLAY_RENDERER);
+    printf("GAME_OVERLAY_RENDER_ADDRESS %p\n", GAME_OVERLAY_RENDERER_ADDRESS);
+    MH_CreateHook(
+            GAME_OVERLAY_RENDERER_ADDRESS,
+            reinterpret_cast<void**>(&hkPresent),
+            reinterpret_cast<void**>(&oPresent));
     resolverHookManager.SetupHook();
     CheatLogic();
     return 0;

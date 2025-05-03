@@ -61,7 +61,6 @@ public:
     }
 
     void EnableAll() {
-        MH_Initialize();
         for(auto& hook : hooks) {
             MH_CreateHook(
                     *hook.target,

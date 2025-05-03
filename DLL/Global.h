@@ -19,6 +19,13 @@ UnityResolve::Assembly *assembly;
 auto UNITY_PLAYER_NAME = "UnityPlayer.dll";
 uintptr_t UNITY_PLAYER = (uintptr_t)GetModuleHandleA(UNITY_PLAYER_NAME);
 
-auto GAME_OVERLAY_RENDER_NAME = "GameOverlayRender64.dll";
-auto GAME_OVERLAY_RENDER = GetModuleHandleA(GAME_OVERLAY_RENDER_NAME);
-uintptr_t GAME_OVERLAY_RENDER_ADDRESS = (uintptr_t)GAME_ASSEMBLY;
+auto GAME_OVERLAY_RENDERER_NAME = "GameOverlayRenderer64.dll";
+auto GAME_OVERLAY_RENDERER = GetModuleHandleA(GAME_OVERLAY_RENDERER_NAME);
+uintptr_t GAME_OVERLAY_ADDRESS = (uintptr_t)GAME_OVERLAY_RENDERER;
+auto GAME_OVERLAY_RENDER_PATTERN = "48 89 5C 24 ? 48 89 6C 24 ? 48 89 74 24 ? 57 41 56 41 57 48 83 EC ? 41 8B E8";
+void* GAME_OVERLAY_RENDERER_ADDRESS = nullptr;
+
+
+auto DX_MODULE_NAME = "d3d11.dll";
+auto DX_MODULE = GetModuleHandleA(DX_MODULE_NAME);
+uintptr_t DX_MODULE_ADDRESS = (uintptr_t)DX_MODULE;

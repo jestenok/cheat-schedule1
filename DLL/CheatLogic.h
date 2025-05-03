@@ -4,14 +4,20 @@
 #include <vector>
 #include <cstdint>
 #include <imgui.h>
+#include <imgui_impl_win32.h>
+#include <imgui_impl_dx11.h>
 #include "Hook.h"
-#include "imgui_impl_win32.h"
-#include "imgui_impl_dx11.h"
+#include "Interface.h"
 
 
 std::vector<UnityResolve::UnityType::GameObject*> objects;
 
 void DestroyObject(int index) {
+    if ( objects.empty() ) {
+        printf("Ошибка: список объектов пуст\n");
+        return;
+    }
+
     if (index < 0 || index >= objects.size()) {
         printf("Ошибка: индекс %d вне диапазона (0-%zu)\n", index, objects.size() - 1);
         return;
@@ -80,66 +86,45 @@ void TeleportOneToOther(void* receiver, void* teleported) {
     printf("receiver x %f %f %f\n", receiverPos.x, receiverPos.y, receiverPos.z);
     printf("Distance %f\n", distance);
 
-//    if (distance > 2.0f) {
-        Vector3 newPos;
-        newPos.x = receiverPos.x + 0.4f;
-        newPos.y = receiverPos.y + 0.4f;
-        newPos.z = receiverPos.z;
-        teleportedTransform->SetPosition(newPos);
-//    }
+    Vector3 newPos;
+    newPos.x = receiverPos.x + 0.4f;
+    newPos.y = receiverPos.y + 0.4f;
+    newPos.z = receiverPos.z;
+    teleportedTransform->SetPosition(newPos);
 }
 
-//void TeleportToRaycast() {
-//    auto res = RaycastHit(100.0f);
-//    if (res.isHit) {
-//        auto playerTransform = player->GetTransform();
-//        if (playerTransform) {
-//            UnityResolve::UnityType::Vector3 newPosition = res.hit.get_point();
-//            // Небольшое смещение вверх, чтобы игрок не застрял в земле
-//            newPosition.y += 1.0f;
-//            playerTransform->SetPosition(newPosition);
-//            printf("Телепортация на координаты: %f, %f, %f\n", newPosition.x, newPosition.y, newPosition.z);
-//        }
-//    } else {
-//        printf("Не удалось найти точку для телепортации\n");
-//    }
-//}
+int qwe = 0;
+HRESULT hkPresent(IDXGISwapChain* pSwapChain, UINT SyncInterval, UINT Flags) {
+    //__int64 __fastcall sub_18008ED90(__int64 a1, __int64 a2, __int64 a3)
+    InitImGui(pSwapChain, SyncInterval, Flags);
 
-inline HWND hWnd = nullptr;
-inline ID3D11Device* pDevice = nullptr;
-inline ID3D11DeviceContext* pContext = nullptr;
-inline ID3D11RenderTargetView* pRenderTargetView = nullptr;
-inline WNDPROC oWndProc = nullptr;
-extern LRESULT ImGui_ImplWin32_WndProcHandler(HWND hwnd, UINT msg, WPARAM wParam, LPARAM lParam);
-//__int64 __fastcall sub_18008ED90(__int64 a1, __int64 a2, __int64 a3)
+    ImGui_ImplDX11_NewFrame();
+    ImGui_ImplWin32_NewFrame();
+    ImGui::NewFrame();
+    ImDrawList* drawList = ImGui::GetBackgroundDrawList();
+    drawList->AddCircle(ImVec2(100, 100), 50.0f, ImColor(255, 0, 0, 255), 12, 1.0f);
 
-//LRESULT __stdcall WndProc(HWND hwnd, UINT msg, WPARAM wParam, LPARAM lParam) {
-//    if (ImGui_ImplWin32_WndProcHandler(hwnd, msg, wParam, lParam))
-//        return true;
-//    return oWndProc(hwnd, msg, wParam, lParam);
-//}
-
-bool ImGuiInit = false;
-
-//HRESULT hkPresent(IDXGISwapChain* pSwapChain, UINT SyncInterval, UINT Flags) {
-//    if (!ImGuiInit) {
-//        if (SUCCEEDED(pSwapChain->GetDevice(__uuidof(ID3D11Device), (void**)&pDevice))) {
-//            pDevice->GetImmediateContext(&pContext);
-//            pSwapChain->GetBuffer(0, __uuidof(ID3D11Texture2D), (LPVOID*)&pRenderTargetView);
-//            ImGui_ImplDX11_Init(pDevice, pContext);
-//            ImGui_ImplWin32_Init(hWnd);
-//            oWndProc = (WNDPROC)SetWindowLongPtr(hWnd, GWLP_WNDPROC, (LONG_PTR)WndProc);
-//            ImGuiInit = true;
-//        }
-//    }
-//}
+    bool isGameFocused = (GetForegroundWindow() == hWnd);
+    isGameFocused = true;
+    ULONGLONG currentTime = GetTickCount64();
+    if (isGameFocused) {
+        if (KeyPressed(VK_INSERT, currentTime)) {
+            menu = !menu;
+            lastToggleTime = currentTime;
+        }
+        if (menu) {
+            ImGui::Begin("Cheat Menu");
+            ImGui::Text("Hello, world!");
+            ImGui::End();
+        }
+    }
+    ImGui::Render();
+    pContext->OMSetRenderTargets(1, &pRenderTargetView, NULL);
+    ImGui_ImplDX11_RenderDrawData(ImGui::GetDrawData());
+    return oPresent(pSwapChain, SyncInterval, Flags);
+}
 
 void CheatLogic() {
-    printf("qwe %p\n", GAME_OVERLAY_RENDER_ADDRESS);
-
-//    MH_CreateHook(reinterpret_cast<void**>(GAME_OVERLAY_RENDER_ADDRESS), &hkOverlay, reinterpret_cast<void**>(&oOverlay));
-//    return;
-
     InitAddresses();
 
     while (!(GetAsyncKeyState(VK_END) & 0x8000)) {
@@ -169,7 +154,7 @@ void CheatLogic() {
             }
         }
         if (GetAsyncKeyState(VK_F4) & 0x8000) {
-            auto targetPlayer = playerList->GetByIndex(1);
+            auto targetPlayer = playerList->GetByIndex(0);
             if (!targetPlayer) {
                 printf("Target player is null\n");
                 return;
@@ -186,6 +171,10 @@ void CheatLogic() {
             f2(officer->fields.BodySearchBehaviour, methodEnable.method);
         }
         if (GetAsyncKeyState('R') & 0x8000) {
+            if (!player) {
+                continue;
+            }
+
             objects.clear();
 
             auto res = RaycastHit();

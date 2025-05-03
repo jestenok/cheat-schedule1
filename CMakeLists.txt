@@ -64,23 +64,23 @@ target_compile_features(${CHEAT_DLL_NAME} PRIVATE cxx_std_20)
 # --------------------------------------------------------------------------
 # 6.  MinHook
 # --------------------------------------------------------------------------
-add_subdirectory(minhook)
+add_subdirectory(extern/minhook)
 
 # --------------------------------------------------------------------------
-# 7.  GLFW (втягиваем исходники как подпроект, без INSTALL/тестов)
+# 7.  GLFW (если он тебе вообще нужен)
 # --------------------------------------------------------------------------
 add_subdirectory(extern/glfw EXCLUDE_FROM_ALL)
 set_target_properties(glfw PROPERTIES FOLDER "third_party")
 
 # --------------------------------------------------------------------------
-# 8.  Dear ImGui
+# 8.  Dear ImGui с Win32 и DX11
 # --------------------------------------------------------------------------
 file(GLOB IMGUI_CORE
         extern/imgui/imgui*.cpp
 )
 set(IMGUI_BACKEND
-        extern/imgui/backends/imgui_impl_glfw.cpp
-        extern/imgui/backends/imgui_impl_opengl3.cpp
+        extern/imgui/backends/imgui_impl_win32.cpp
+        extern/imgui/backends/imgui_impl_dx11.cpp
 )
 
 add_library(imgui STATIC ${IMGUI_CORE} ${IMGUI_BACKEND})
@@ -88,8 +88,8 @@ target_include_directories(imgui PUBLIC
         extern/imgui
         extern/imgui/backends
 )
-find_package(OpenGL REQUIRED)
-target_link_libraries(imgui PUBLIC glfw OpenGL::GL)
+find_package(OpenGL REQUIRED)  # На всякий случай
+target_link_libraries(imgui PUBLIC d3d11 glfw OpenGL::GL)
 
 # --------------------------------------------------------------------------
 # 9.  Линковка библиотек
@@ -99,6 +99,11 @@ target_link_libraries(${CHEAT_DLL_NAME}
         imgui
         minhook
         -static-libstdc++ -static-libgcc
+        d3d11
+        dxgi
+        d3dcompiler   # <<<
+        dwmapi        # <<<
+        user32
 )
 
 target_link_libraries(cheat PRIVATE imgui)
@@ -107,6 +112,6 @@ target_link_libraries(cheat PRIVATE imgui)
 # 10. Сообщения для пользователя
 # --------------------------------------------------------------------------
 message(STATUS "Сборка DLL: ${CHEAT_DLL_NAME}")
-message(STATUS "ImGui       : подключён статически")
+message(STATUS "ImGui       : подключён статически с Win32/DX11")
 message(STATUS "GLFW        : собран как подпроект extern/glfw")
 message(STATUS "MinHook     : подключён через add_subdirectory(minhook)")

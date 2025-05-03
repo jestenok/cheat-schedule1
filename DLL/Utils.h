@@ -83,5 +83,58 @@ std::wstring ExtractUnicodeString(const char* str, size_t length) {
     return std::wstring(res, length); // безопасный вариант
 }
 
+uintptr_t FindPattern(uintptr_t pModuleBaseAddress, const char* szSignature, size_t nSelectResultIndex = NULL) {
+    auto PatternToBytes = [](const char* szPattern) {
+        auto m_iBytes = std::vector<int>{};
+        const auto szStartAddr = const_cast<char*>(szPattern);
+        const auto szEndAddr = const_cast<char*>(szPattern) + strlen(szPattern);
+
+        for (auto szCurrentAddr = szStartAddr; szCurrentAddr < szEndAddr; ++szCurrentAddr) {
+            if (*szCurrentAddr == '?') {
+                ++szCurrentAddr;
+                if (*szCurrentAddr == '?') ++szCurrentAddr;
+                m_iBytes.push_back(-1);
+            } else {
+                m_iBytes.push_back(strtoul(szCurrentAddr, &szCurrentAddr, 16));
+            }
+        }
+
+        return m_iBytes;
+    };
+
+    const auto pDosHeader = (PIMAGE_DOS_HEADER)pModuleBaseAddress;
+    const auto pNtHeaders = (PIMAGE_NT_HEADERS)((std::uint8_t*)pModuleBaseAddress + pDosHeader->e_lfanew);
+    const auto dwSizeOfImage = pNtHeaders->OptionalHeader.SizeOfImage;
+    auto m_iPatternBytes = PatternToBytes(szSignature);
+    auto pScanBytes = reinterpret_cast<std::uint8_t*>(pModuleBaseAddress);
+
+    const auto m_iPatternSize = m_iPatternBytes.size();
+    auto m_iPatternData = m_iPatternBytes.data();
+
+    size_t nFoundResults = 0;
+
+    for (size_t i = 0; i < dwSizeOfImage - m_iPatternSize; ++i) {
+        bool bFound = true;
+        for (size_t j = 0; j < m_iPatternSize; ++j) {
+            if (m_iPatternData[j] != -1 && m_iPatternData[j] != pScanBytes[i + j]) {
+                bFound = false;
+                break;
+            }
+        }
+
+        if (bFound) {
+            if (nSelectResultIndex != 0) {
+                if (nFoundResults < nSelectResultIndex) {
+                    nFoundResults++;
+                    continue;
+                }
+            }
+            return reinterpret_cast<uintptr_t>(&pScanBytes[i]);
+        }
+    }
+
+    return NULL;
+}
+
 
 #pragma endregion
